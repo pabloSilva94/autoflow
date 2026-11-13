@@ -1,0 +1,57 @@
+{
+  "name": "autoflow",
+  "version": "1.0.1",
+  "description": "AutoFlow - automacao de fluxos para Windows",
+  "main": "main.js",
+  "author": "AutoFlow",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.autoflow.app",
+    "productName": "AutoFlow",
+    "publish": {
+      "provider": "github",
+      "owner": "pabloSilva94",
+      "repo": "https://github.com/pabloSilva94/autoflow.git"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/*",
+      "node_modules/nodemailer/**/*",
+      "node_modules/express/**/*",
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "style.css"
+    ],
+    "electronLanguages": [
+      "en-US",
+      "pt-BR"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/robo.ico"
+    },
+    "portable": {
+      "artifactName": "AutoFlow.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11",
+    "nodemailer": "^6.9.14"
+  },
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^24.13.3"
+  }
+}

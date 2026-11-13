@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <title>AutoFlow</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside>
+    <div class="brand">⚡ AutoFlow</div>
+    <ul id="list"></ul>
+    <button id="btnNew" class="primary">+ Novo fluxo</button>
+    <div class="row" style="gap: 6px;">
+      <button id="btnExport" style="flex: 1;">Exportar</button>
+      <button id="btnImport" style="flex: 1;">Importar</button>
+    </div>
+    <label class="auto"><input type="checkbox" id="autostart"> Iniciar com o Windows</label>
+  </aside>
+
+  <main>
+    <div id="empty" class="empty">Crie ou selecione um fluxo à esquerda.</div>
+
+    <section id="editor" hidden>
+      <div class="row">
+        <input id="name" class="title" placeholder="Nome do fluxo">
+        <label class="switch"><input type="checkbox" id="enabled"> Ativo</label>
+        <button id="btnRun">▶ Executar agora</button>
+        <button id="btnDel" class="danger">Excluir</button>
+      </div>
+
+      <div class="card">
+        <h3>Quando executar</h3>
+        <div class="row">
+          <select id="trigType"></select>
+          <input id="trigValue" placeholder="">
+        </div>
+        <small id="trigHint"></small>
+      </div>
+
+      <div class="card">
+        <div class="row between">
+          <h3>Ações (executadas em ordem)</h3>
+          <div class="row">
+            <label class="switch"><input type="checkbox" id="recPauses" checked> gravar pausas</label>
+            <button id="btnRec">⏺ Gravar mouse</button>
+            <button id="btnAdd" class="primary">+ Adicionar ação</button>
+          </div>
+        </div>
+        <div id="steps"></div>
+      </div>
+    </section>
+
+    <div class="card logcard">
+      <h3>Log</h3>
+      <pre id="log"></pre>
+    </div>
+  </main>
+
+  <dialog id="dlg">
+    <h3>Configurar ação</h3>
+
+    <div class="field-group">
+      <label for="stepTitle">Título personalizado (opcional)</label>
+      <input id="stepTitle" placeholder="Ex: Abrir o executar">
+    </div>
+
+    <div class="field-group">
+      <label for="stepType">Tipo de Ação</label>
+      <select id="stepType"></select>
+    </div>
+
+    <div id="fields"></div>
+    <div id="guide" class="guide" hidden></div>
+    <small>Use {{last}} para a saída do passo anterior, {{now}} para data/hora e {{nome}} para variáveis.</small>
+    <div class="row end">
+      <button id="dlgCancel">Cancelar</button>
+      <button id="dlgOk" class="primary">Salvar</button>
+    </div>
+  </dialog>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
