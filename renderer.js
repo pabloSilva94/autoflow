@@ -11,7 +11,8 @@ const ACTIONS = {
   write_file: { label: 'Escrever em arquivo', fields: [
     { k: 'path', l: 'Caminho do arquivo', d: 'C:\\temp\\saida.txt' },
     { k: 'content', l: 'Conteúdo', d: '{{last}}', multi: true },
-    { k: 'append', l: 'Adicionar ao final? (sim/não)', d: 'sim' }] },
+    { k: 'append', l: 'Adicionar ao final? (sim/não)', d: 'sim' },
+    { k: 'on_duplicate', l: 'Se o arquivo já existir? (sobrescrever / renomear / parar)', d: 'sobrescrever' }] },
   open: { label: 'Abrir programa / arquivo / site', fields: [
     { k: 'target', l: 'Caminho ou URL', d: 'https://' }] },
   message: { label: 'Mostrar mensagem', fields: [
@@ -73,9 +74,64 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 let flows = [];
 let cur = null;
 let editing = -1; // -1 = novo passo
+let zoomScale = 1;
 
 const persist = () => window.api.saveFlows(flows);
 const flow = () => (cur !== null ? flows[cur] : null);
+
+// ---- Gerenciamento de Abas ----
+$('tabFlows').onclick = () => {
+  $('tabFlows').classList.add('active');
+  $('tabLogs').classList.remove('active');
+  $('viewFlows').hidden = false;
+  $('viewLogs').hidden = true;
+};
+
+$('tabLogs').onclick = () => {
+  $('tabLogs').classList.add('active');
+  $('tabFlows').classList.remove('active');
+  $('viewLogs').hidden = false;
+  $('viewFlows').hidden = true;
+};
+
+$('btnClearLog').onclick = () => {
+  $('log').textContent = '';
+};
+
+// ---- Lógica de Zoom no Canvas ----
+function setZoom(newScale, clientX = null, clientY = null) {
+  const container = $('canvas-container');
+  const viewport = $('canvas-viewport');
+  if (!container || !viewport) return;
+
+  const clamped = Math.min(2, Math.max(0.35, Number(newScale.toFixed(2))));
+  if (clamped === zoomScale) return;
+
+  const rect = container.getBoundingClientRect();
+  const mouseX = clientX !== null ? clientX - rect.left : rect.width / 2;
+  const mouseY = clientY !== null ? clientY - rect.top : rect.height / 2;
+
+  const worldX = (container.scrollLeft + mouseX) / zoomScale;
+  const worldY = (container.scrollTop + mouseY) / zoomScale;
+
+  zoomScale = clamped;
+  viewport.style.transform = `scale(${zoomScale})`;
+  container.style.backgroundSize = `${24 * zoomScale}px ${24 * zoomScale}px`;
+  $('btnZoomReset').textContent = `${Math.round(zoomScale * 100)}%`;
+
+  container.scrollLeft = worldX * zoomScale - mouseX;
+  container.scrollTop = worldY * zoomScale - mouseY;
+}
+
+$('canvas-container').addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 0.1 : -0.1;
+  setZoom(zoomScale + delta, e.clientX, e.clientY);
+}, { passive: false });
+
+$('btnZoomIn').onclick = () => setZoom(zoomScale + 0.15);
+$('btnZoomOut').onclick = () => setZoom(zoomScale - 0.15);
+$('btnZoomReset').onclick = () => setZoom(1);
 
 function renderList() {
   $('list').innerHTML = flows.map((f, i) =>
@@ -127,6 +183,7 @@ $('btnImport').onclick = async () => {
       imported.id = uid();
       flows.push(imported);
       cur = flows.length - 1;
+      ensureStepCoords(flow());
       persist();
       renderAll();
     }
@@ -135,35 +192,101 @@ $('btnImport').onclick = async () => {
   }
 };
 
+// Garante e salva as coordenadas de todos os passos para respeitar a hierarquia permanentemente
+function ensureStepCoords(f) {
+  if (!f || !f.steps) return;
+  let changed = false;
+  f.steps.forEach((s, i) => {
+    if (typeof s.x !== 'number' || isNaN(s.x)) {
+      const prev = i > 0 ? f.steps[i - 1] : null;
+      s.x = prev && typeof prev.x === 'number' ? prev.x + 340 : 80;
+      changed = true;
+    }
+    if (typeof s.y !== 'number' || isNaN(s.y)) {
+      const prev = i > 0 ? f.steps[i - 1] : null;
+      s.y = prev && typeof prev.y === 'number' ? prev.y : 80;
+      changed = true;
+    }
+  });
+  if (changed) {
+    persist();
+  }
+}
+
+function updateSvgConnections(f) {
+  const svgContainer = $('canvas-svg');
+  if (!svgContainer) return;
+  ensureStepCoords(f);
+  let svgHtml = '';
+  f.steps.forEach((s, i) => {
+    if (i < f.steps.length - 1) {
+      const nextS = f.steps[i + 1];
+
+      const x1 = s.x + 130;
+      const y1 = s.y + 90;
+      const x2 = nextS.x + 130;
+      const y2 = nextS.y;
+      
+      const pathData = `M ${x1} ${y1} C ${x1} ${y1 + 40}, ${x2} ${y2 - 40}, ${x2} ${y2}`;
+      svgHtml += `<path d="${pathData}" stroke="#4c6fff" stroke-width="2.5" fill="none" stroke-dasharray="4,4" opacity="0.7"/>`;
+    }
+  });
+  svgContainer.innerHTML = svgHtml;
+}
+
 function renderSteps() {
   const f = flow();
-  if (!f.steps.length) { $('steps').innerHTML = '<small>Nenhuma ação ainda. Clique em "+ Adicionar ação".</small>'; return; }
+  const nodesContainer = $('nodes-canvas');
+
+  if (!f || !f.steps.length) {
+    nodesContainer.innerHTML = '<div class="canvas-empty">Nenhuma ação ainda. Clique em "+ Adicionar ação".</div>';
+    const svgContainer = $('canvas-svg');
+    if (svgContainer) svgContainer.innerHTML = '';
+    return;
+  }
+
+  ensureStepCoords(f);
+  let nodesHtml = '';
   
-  $('steps').innerHTML = f.steps.map((s, i) => {
-    const sum = Object.entries(s.params).filter(([k]) => k !== 'password')
-      .map(([, v]) => String(v).replace(/\s+/g, ' ').slice(0, 40)).join(' | ');
+  f.steps.forEach((s, i) => {
+    const sum = Object.entries(s.params || {}).filter(([k]) => k !== 'password')
+      .map(([, v]) => String(v).replace(/\s+/g, ' ').slice(0, 30)).join(' | ');
     
     const actionLabel = ACTIONS[s.type] ? ACTIONS[s.type].label : s.type;
     const customTitle = (s.title || '').trim();
-    
-    const titleHtml = customTitle
-      ? `<b>${esc(customTitle)}</b> <span style="color: #6280ff; font-size: 11px; margin-left: 6px;">[${esc(actionLabel)}]</span>`
-      : `<b>${esc(actionLabel)}</b>`;
+    const titleText = customTitle ? customTitle : actionLabel;
 
-    return `<div class="step" draggable="true" data-index="${i}">
-      <span class="drag-handle" title="Arraste para reordenar">☰</span>
-      <div class="n">${i + 1}</div>
-      <div class="info">
-        ${titleHtml}
-        <span>${esc(sum)}</span>
+    nodesHtml += `
+      <div class="flow-node" data-index="${i}">
+        <div class="node-handle in"></div>
+        <div class="node-header">
+          <div class="node-icon">${i + 1}</div>
+          <div class="node-title" title="${esc(titleText)}">${esc(titleText)}</div>
+        </div>
+        <div class="node-body" title="${esc(sum)}">${esc(sum || actionLabel)}</div>
+        <div class="node-footer">
+          <button data-a="edit" data-i="${i}">Editar</button>
+          <button data-a="dup" data-i="${i}">Duplicar</button>
+          <button data-a="up" data-i="${i}">↑</button>
+          <button data-a="down" data-i="${i}">↓</button>
+          <button data-a="del" data-i="${i}" class="danger">✕</button>
+        </div>
+        <div class="node-handle out"></div>
       </div>
-      <button data-a="edit" data-i="${i}">Editar</button>
-      <button data-a="dup" data-i="${i}" title="Duplicar ação">Duplicar</button>
-      <button data-a="up" data-i="${i}">↑</button>
-      <button data-a="down" data-i="${i}">↓</button>
-      <button data-a="del" data-i="${i}" class="danger">✕</button>
-    </div>`;
-  }).join('');
+    `;
+  });
+
+  nodesContainer.innerHTML = nodesHtml;
+
+  // O CSP (style-src 'self') bloqueia style="" inline vindo de innerHTML,
+  // então a posição é aplicada via JS (CSSOM), que não é bloqueado.
+  nodesContainer.querySelectorAll('.flow-node').forEach((el) => {
+    const st = f.steps[+el.dataset.index];
+    el.style.left = `${st.x}px`;
+    el.style.top = `${st.y}px`;
+  });
+
+  updateSvgConnections(f);
 }
 
 function openStep(i) {
@@ -191,15 +314,31 @@ $('dlgOk').onclick = () => {
   const params = {};
   $('fields').querySelectorAll('[data-k]').forEach((el) => { params[el.dataset.k] = el.value; });
   
+  const f = flow();
   const step = { type: $('stepType').value, title, params };
   
-  if (editing >= 0) flow().steps[editing] = step; else flow().steps.push(step);
+  if (editing >= 0) {
+    const existing = f.steps[editing];
+    step.x = typeof existing.x === 'number' ? existing.x : 80;
+    step.y = typeof existing.y === 'number' ? existing.y : 80;
+    f.steps[editing] = step;
+  } else {
+    const lastStep = f.steps.length > 0 ? f.steps[f.steps.length - 1] : null;
+    step.x = lastStep && typeof lastStep.x === 'number' ? lastStep.x + 340 : 80;
+    step.y = lastStep && typeof lastStep.y === 'number' ? lastStep.y : 80;
+    f.steps.push(step);
+  }
+  
   persist(); 
   renderSteps();
   $('dlg').close();
 };
 
-function renderAll() { renderList(); renderEditor(); }
+function renderAll() { 
+  if (flow()) ensureStepCoords(flow());
+  renderList(); 
+  renderEditor(); 
+}
 
 // ---- fluxos
 $('btnNew').onclick = () => {
@@ -227,15 +366,18 @@ $('trigType').onchange = () => {
 };
 $('trigValue').oninput = () => { flow().trigger.value = $('trigValue').value; persist(); };
 
-// ---- passos
-$('steps').onclick = (e) => {
+// ---- Ações dos nós no Canvas n8n
+$('nodes-canvas').onclick = (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   const i = +b.dataset.i, f = flow(), a = b.dataset.a;
   
   if (a === 'edit') openStep(i);
   if (a === 'dup') {
-    const clonedStep = JSON.parse(JSON.stringify(f.steps[i]));
+    const source = f.steps[i];
+    const clonedStep = JSON.parse(JSON.stringify(source));
+    clonedStep.x = (typeof source.x === 'number' ? source.x : 80) + 340;
+    clonedStep.y = typeof source.y === 'number' ? source.y : 80;
     f.steps.splice(i + 1, 0, clonedStep);
   }
   if (a === 'del') f.steps.splice(i, 1);
@@ -248,6 +390,87 @@ $('steps').onclick = (e) => {
   }
 };
 $('btnAdd').onclick = () => openStep(-1);
+
+// ---- Lógica de Arrastar Blocos e Panning do Canvas ----
+let draggingNodeIndex = null;
+let dragStartX = 0;
+let dragStartY = 0;
+let nodeStartX = 0;
+let nodeStartY = 0;
+
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let panStartScrollLeft = 0;
+let panStartScrollTop = 0;
+
+$('canvas-container').addEventListener('mousedown', (e) => {
+  if (e.target.closest('.zoom-controls')) return;
+
+  const nodeEl = e.target.closest('.flow-node');
+  if (nodeEl) {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+    draggingNodeIndex = +nodeEl.dataset.index;
+    const f = flow();
+    const s = f.steps[draggingNodeIndex];
+    
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    nodeStartX = typeof s.x === 'number' ? s.x : 80;
+    nodeStartY = typeof s.y === 'number' ? s.y : 80;
+    
+    nodeEl.style.zIndex = 1000;
+    e.stopPropagation();
+    return;
+  }
+
+  // Arrastar o fundo do canvas (Pan)
+  isPanning = true;
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  panStartScrollLeft = $('canvas-container').scrollLeft;
+  panStartScrollTop = $('canvas-container').scrollTop;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (draggingNodeIndex !== null) {
+    const f = flow();
+    if (!f) return;
+    const s = f.steps[draggingNodeIndex];
+    
+    const dx = (e.clientX - dragStartX) / zoomScale;
+    const dy = (e.clientY - dragStartY) / zoomScale;
+    
+    s.x = Math.max(10, Math.round(nodeStartX + dx));
+    s.y = Math.max(10, Math.round(nodeStartY + dy));
+    
+    const nodeEl = document.querySelector(`.flow-node[data-index="${draggingNodeIndex}"]`);
+    if (nodeEl) {
+      nodeEl.style.left = `${s.x}px`;
+      nodeEl.style.top = `${s.y}px`;
+    }
+    
+    updateSvgConnections(f);
+    return;
+  }
+
+  if (isPanning) {
+    const container = $('canvas-container');
+    container.scrollLeft = panStartScrollLeft - (e.clientX - panStartX);
+    container.scrollTop = panStartScrollTop - (e.clientY - panStartY);
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  if (draggingNodeIndex !== null) {
+    const nodeEl = document.querySelector(`.flow-node[data-index="${draggingNodeIndex}"]`);
+    if (nodeEl) nodeEl.style.zIndex = '';
+    draggingNodeIndex = null;
+    persist();
+    updateSvgConnections(flow());
+  }
+  isPanning = false;
+});
 
 function buildFields(type, saved) {
   $('fields').innerHTML = ACTIONS[type].fields.map((fd) => {
@@ -307,55 +530,6 @@ $('guide').onclick = (e) => {
   input.value = e.shiftKey && input.value.trim() ? input.value.trim() + ', ' + b.dataset.key : b.dataset.key;
 };
 
-// ---- Lógica de Drag and Drop para as Ações
-let draggedIndex = null;
-
-$('steps').addEventListener('dragstart', (e) => {
-  const stepEl = e.target.closest('.step');
-  if (!stepEl) return;
-  draggedIndex = +stepEl.dataset.index;
-  stepEl.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-});
-
-$('steps').addEventListener('dragover', (e) => {
-  e.preventDefault();
-  const stepEl = e.target.closest('.step');
-  if (!stepEl) return;
-  document.querySelectorAll('.step').forEach(s => s.classList.remove('drag-over'));
-  stepEl.classList.add('drag-over');
-});
-
-$('steps').addEventListener('dragleave', (e) => {
-  const stepEl = e.target.closest('.step');
-  if (stepEl) stepEl.classList.remove('drag-over');
-});
-
-$('steps').addEventListener('drop', (e) => {
-  e.preventDefault();
-  const targetEl = e.target.closest('.step');
-  if (!targetEl || draggedIndex === null) return;
-  
-  const targetIndex = +targetEl.dataset.index;
-  const f = flow();
-  if (!f || draggedIndex === targetIndex) return;
-
-  const [movedItem] = f.steps.splice(draggedIndex, 1);
-  f.steps.splice(targetIndex, 0, movedItem);
-  
-  draggedIndex = null;
-  persist();
-  renderSteps();
-});
-
-$('steps').addEventListener('dragend', () => {
-  draggedIndex = null;
-  document.querySelectorAll('.step').forEach(s => {
-    s.classList.remove('dragging');
-    s.classList.remove('drag-over');
-  });
-});
-
 // ---- gravador de mouse
 $('btnRec').onclick = () => {
   if (!flow()) return;
@@ -363,7 +537,16 @@ $('btnRec').onclick = () => {
 };
 window.api.onRecDone((steps) => {
   const f = flow();
-  if (f && steps.length) { f.steps.push(...steps); persist(); renderSteps(); }
+  if (f && steps.length) { 
+    steps.forEach((step, idx) => {
+      const last = f.steps.length > 0 ? f.steps[f.steps.length - 1] : null;
+      step.x = last && typeof last.x === 'number' ? last.x + 340 : 80;
+      step.y = last && typeof last.y === 'number' ? last.y : 80;
+    });
+    f.steps.push(...steps); 
+    persist(); 
+    renderSteps(); 
+  }
 });
 
 // ---- log / autostart
@@ -381,6 +564,9 @@ $('autostart').onchange = () => window.api.setAutostart($('autostart').checked);
   $('trigType').addEventListener('change', updateTriggerUI);
   flows = await window.api.getFlows();
   $('autostart').checked = await window.api.getAutostart();
-  if (flows.length) cur = 0;
+  if (flows.length) {
+    cur = 0;
+    ensureStepCoords(flows[cur]);
+  }
   renderAll();
 })();

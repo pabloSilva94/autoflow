@@ -9,51 +9,77 @@
 <body>
   <aside>
     <div class="brand">⚡ AutoFlow</div>
+    <div class="nav-tabs">
+      <button id="tabFlows" class="tab-btn active">Fluxos</button>
+      <button id="tabLogs" class="tab-btn">Logs</button>
+    </div>
     <ul id="list"></ul>
     <button id="btnNew" class="primary">+ Novo fluxo</button>
-    <div class="row" style="gap: 6px;">
-      <button id="btnExport" style="flex: 1;">Exportar</button>
-      <button id="btnImport" style="flex: 1;">Importar</button>
+    <div class="row gap-sm">
+      <button id="btnExport" class="flex1">Exportar</button>
+      <button id="btnImport" class="flex1">Importar</button>
     </div>
     <label class="auto"><input type="checkbox" id="autostart"> Iniciar com o Windows</label>
   </aside>
 
   <main>
-    <div id="empty" class="empty">Crie ou selecione um fluxo à esquerda.</div>
+    <!-- Aba de Editor de Fluxos -->
+    <div id="viewFlows" class="view-section">
+      <div id="empty" class="empty">Crie ou selecione um fluxo à esquerda.</div>
 
-    <section id="editor" hidden>
-      <div class="row">
-        <input id="name" class="title" placeholder="Nome do fluxo">
-        <label class="switch"><input type="checkbox" id="enabled"> Ativo</label>
-        <button id="btnRun">▶ Executar agora</button>
-        <button id="btnDel" class="danger">Excluir</button>
-      </div>
-
-      <div class="card">
-        <h3>Quando executar</h3>
+      <section id="editor" hidden>
         <div class="row">
-          <select id="trigType"></select>
-          <input id="trigValue" placeholder="">
+          <input id="name" class="title" placeholder="Nome do fluxo">
+          <label class="switch"><input type="checkbox" id="enabled"> Ativo</label>
+          <button id="btnRun">▶ Executar agora</button>
+          <button id="btnDel" class="danger">Excluir</button>
         </div>
-        <small id="trigHint"></small>
-      </div>
 
-      <div class="card">
-        <div class="row between">
-          <h3>Ações (executadas em ordem)</h3>
+        <div class="card">
+          <h3>Quando executar</h3>
           <div class="row">
-            <label class="switch"><input type="checkbox" id="recPauses" checked> gravar pausas</label>
-            <button id="btnRec">⏺ Gravar mouse</button>
-            <button id="btnAdd" class="primary">+ Adicionar ação</button>
+            <select id="trigType"></select>
+            <input id="trigValue" placeholder="">
+          </div>
+          <small id="trigHint"></small>
+        </div>
+
+        <div class="card canvas-card">
+          <div class="row between">
+            <h3>Fluxo de Trabalho (Canvas n8n)</h3>
+            <div class="row">
+              <label class="switch"><input type="checkbox" id="recPauses" checked> gravar pausas</label>
+              <button id="btnRec">⏺ Gravar mouse</button>
+              <button id="btnAdd" class="primary">+ Adicionar ação</button>
+            </div>
+          </div>
+          
+          <!-- Área Visual estilo n8n com Zoom -->
+          <div id="canvas-container">
+            <div id="canvas-viewport">
+              <svg id="canvas-svg"></svg>
+              <div id="nodes-canvas"></div>
+            </div>
+
+            <div class="zoom-controls">
+              <button id="btnZoomOut" title="Diminuir zoom (-)">−</button>
+              <button id="btnZoomReset" title="Resetar zoom (100%)">100%</button>
+              <button id="btnZoomIn" title="Aumentar zoom (+)">+</button>
+            </div>
           </div>
         </div>
-        <div id="steps"></div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <div class="card logcard">
-      <h3>Log</h3>
-      <pre id="log"></pre>
+    <!-- Aba de Logs -->
+    <div id="viewLogs" class="view-section" hidden>
+      <div class="card logcard-fullscreen">
+        <div class="row between">
+          <h3>Log de Execução</h3>
+          <button id="btnClearLog">Limpar logs</button>
+        </div>
+        <pre id="log"></pre>
+      </div>
     </div>
   </main>
 
