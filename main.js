@@ -706,6 +706,66 @@ function stopRec() {
   if (win && !win.isDestroyed()) win.webContents.send("rec:done", steps);
 }
 
+// ---------------- Atualização automática (GitHub Releases) ----------------
+let updateDownloaded = false;
+
+function setupAutoUpdater() {
+  log(`Versão instalada: ${app.getVersion()}`);
+  if (!app.isPackaged) {
+    log("[update] Desativado em modo desenvolvimento (só funciona no app instalado).");
+    return;
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  let lastPct = -1;
+  autoUpdater.on("checking-for-update", () =>
+    log("[update] Procurando atualizações..."),
+  );
+  autoUpdater.on("update-available", (i) =>
+    log(`[update] Nova versão ${i.version} encontrada. Baixando...`),
+  );
+  autoUpdater.on("update-not-available", (i) =>
+    log(`[update] Nenhuma atualização. Última versão publicada: ${i.version}`),
+  );
+  autoUpdater.on("download-progress", (p) => {
+    const pct = Math.floor(p.percent / 25) * 25;
+    if (pct !== lastPct) {
+      lastPct = pct;
+      log(`[update] Baixando... ${Math.round(p.percent)}%`);
+    }
+  });
+  autoUpdater.on("error", (e) =>
+    log(`[update] ERRO: ${String((e && (e.message || e)) || "desconhecido").slice(0, 400)}`),
+  );
+  autoUpdater.on("update-downloaded", async (i) => {
+    updateDownloaded = true;
+    log(`[update] Versão ${i.version} baixada e pronta para instalar.`);
+    const { response } = await dialog.showMessageBox(win, {
+      type: "info",
+      buttons: ["Reiniciar agora", "Depois"],
+      defaultId: 0,
+      cancelId: 1,
+      title: "Atualização disponível",
+      message: `O AutoFlow ${i.version} foi baixado.`,
+      detail:
+        "Reinicie para instalar. Se escolher \"Depois\", a atualização será instalada ao fechar o app.",
+    });
+    if (response === 0) autoUpdater.quitAndInstall();
+  });
+
+  const check = () => {
+    if (updateDownloaded) return;
+    autoUpdater
+      .checkForUpdates()
+      .catch((e) => log(`[update] Falha ao verificar: ${e.message}`));
+  };
+  check();
+  // O app fica aberto por dias (agendamentos): rechecar a cada 4 horas
+  setInterval(check, 4 * 60 * 60 * 1000);
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1120,
@@ -731,12 +791,12 @@ if (!app.requestSingleInstanceLock()) {
     load();
     createWindow();
     setInterval(tick, 1000);
-    autoUpdater.checkForUpdatesAndNotify();
-    win.webContents.once("did-finish-load", () =>
+    win.webContents.once("did-finish-load", () => {
       log(
         "AutoFlow iniciado. Mantenha o programa aberto para os agendamentos rodarem.",
-      ),
-    );
+      );
+      setupAutoUpdater();
+    });
   });
   app.on("window-all-closed", () => app.quit());
 }
