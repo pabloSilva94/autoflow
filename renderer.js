@@ -3,21 +3,28 @@ const ACTIONS = {
     { k: 'method', l: 'Método (GET, POST...)', d: 'GET' },
     { k: 'url', l: 'URL', d: 'https://' },
     { k: 'headers', l: 'Headers (JSON)', d: '{}' },
-    { k: 'body', l: 'Corpo', d: '', multi: true }] },
+    { k: 'body', l: 'Corpo', d: '', multi: true },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   command: { label: 'Executar comando / script', fields: [
     { k: 'cmd', l: 'Comando (cmd)', d: 'echo olá', multi: true },
-    { k: 'timeout', l: 'Timeout (segundos)', d: '300' }] },
-  delay: { label: 'Esperar', fields: [{ k: 'seconds', l: 'Segundos', d: '5' }] },
+    { k: 'timeout', l: 'Timeout (segundos)', d: '300' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
+  delay: { label: 'Esperar', fields: [
+    { k: 'seconds', l: 'Segundos', d: '5' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   write_file: { label: 'Escrever em arquivo', fields: [
     { k: 'path', l: 'Caminho do arquivo', d: 'C:\\temp\\saida.txt' },
     { k: 'content', l: 'Conteúdo', d: '{{last}}', multi: true },
     { k: 'append', l: 'Adicionar ao final? (sim/não)', d: 'sim' },
-    { k: 'on_duplicate', l: 'Se o arquivo já existir? (sobrescrever / renomear / parar)', d: 'sobrescrever' }] },
+    { k: 'on_duplicate', l: 'Se o arquivo já existir? (sobrescrever / renomear / parar)', d: 'sobrescrever' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   open: { label: 'Abrir programa / arquivo / site', fields: [
-    { k: 'target', l: 'Caminho ou URL', d: 'https://' }] },
+    { k: 'target', l: 'Caminho ou URL', d: 'https://' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   message: { label: 'Mostrar mensagem', fields: [
     { k: 'title', l: 'Título', d: 'AutoFlow' },
-    { k: 'text', l: 'Texto', d: '{{last}}', multi: true }] },
+    { k: 'text', l: 'Texto', d: '{{last}}', multi: true },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   email: { label: 'Enviar e-mail (SMTP)', fields: [
     { k: 'host', l: 'Servidor SMTP', d: 'smtp.gmail.com' },
     { k: 'port', l: 'Porta (465 = SSL)', d: '465' },
@@ -25,39 +32,49 @@ const ACTIONS = {
     { k: 'password', l: 'Senha / senha de app', d: '' },
     { k: 'to', l: 'Para', d: '' },
     { k: 'subject', l: 'Assunto', d: 'AutoFlow' },
-    { k: 'body', l: 'Mensagem', d: '{{last}}', multi: true }] },
+    { k: 'body', l: 'Mensagem', d: '{{last}}', multi: true },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   web_upload: { label: 'Página web: enviar arquivo (automático)', fields: [
     { k: 'url', l: 'Página (caminho do .html ou URL)', d: 'C:\\pasta\\pagina.html' },
     { k: 'input', l: 'Seletor CSS do campo de arquivo', d: 'input[type=file]' },
     { k: 'file', l: 'Arquivo a enviar (.json)', d: 'C:\\pasta\\dados.json' },
     { k: 'button', l: 'Seletor CSS do botão Enviar (opcional)', d: 'button' },
     { k: 'wait', l: 'Esperar resposta (segundos)', d: '3' },
-    { k: 'show', l: 'Mostrar a janela? (sim/não)', d: 'não' }] },
+    { k: 'show', l: 'Mostrar a janela? (sim/não)', d: 'não' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   http_upload: { label: 'Enviar arquivo via HTTP (multipart)', fields: [
     { k: 'url', l: 'URL de destino', d: 'https://' },
     { k: 'field', l: 'Nome do campo do arquivo', d: 'file' },
     { k: 'file', l: 'Arquivo a enviar', d: 'C:\\pasta\\dados.json' },
-    { k: 'headers', l: 'Headers (JSON)', d: '{}' }] },
+    { k: 'headers', l: 'Headers (JSON)', d: '{}' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   mouse_click: { label: 'Mouse: clicar na tela', fields: [
     { k: 'x', l: 'Posição X', d: '500' },
     { k: 'y', l: 'Posição Y', d: '400' },
-    { k: 'kind', l: 'Tipo (simples / duplo / direito)', d: 'simples' }] },
+    { k: 'kind', l: 'Tipo (simples / duplo / direito)', d: 'simples' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   mouse_scroll: { label: 'Mouse: rolar a página', fields: [
     { k: 'x', l: 'Posição X (opcional)', d: '500' },
     { k: 'y', l: 'Posição Y (opcional)', d: '400' },
-    { k: 'amount', l: 'Quantidade de rolagens (positivo = descer, negativo = subir)', d: '5' }] },
+    { k: 'amount', l: 'Quantidade de rolagens (positivo = descer, negativo = subir)', d: '5' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   type_text: { label: 'Teclado: digitar texto', fields: [
     { k: 'text', l: 'Texto (ex.: caminho do arquivo)', d: 'C:\\pasta\\dados.json' },
-    { k: 'enter', l: 'Apertar Enter no final? (sim/não)', d: 'sim' }] },
+    { k: 'enter', l: 'Apertar Enter no final? (sim/não)', d: 'sim' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   press_keys: { label: 'Teclado: pressionar teclas / atalhos', fields: [
-    { k: 'keys', l: 'Teclas (ex.: Win+R  ou  Ctrl+Shift+Esc  ou  Win+R, Enter)', d: 'Win+R' }] },
+    { k: 'keys', l: 'Teclas (ex.: Win+R  ou  Ctrl+Shift+Esc  ou  Win+R, Enter)', d: 'Win+R' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   mouse_pos: { label: 'Descobrir posição do mouse', fields: [
-    { k: 'seconds', l: 'Segundos para posicionar o mouse', d: '5' }] },
+    { k: 'seconds', l: 'Segundos para posicionar o mouse', d: '5' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   set_var: { label: 'Definir variável', fields: [
     { k: 'name', l: 'Nome', d: 'minha_var' },
-    { k: 'value', l: 'Valor', d: '{{last}}' }] },
+    { k: 'value', l: 'Valor', d: '{{last}}' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] },
   if_contains: { label: 'Parar se NÃO contiver texto', fields: [
-    { k: 'text', l: 'Texto procurado na saída anterior', d: '' }] }
+    { k: 'text', l: 'Texto procurado na saída anterior', d: '' },
+    { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] }
 };
 
 const TRIGGERS = {
@@ -73,13 +90,19 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 
 let flows = [];
 let cur = null;
-let editing = -1; // -1 = novo passo
+let editing = -1;
 let zoomScale = 1;
+
+let simState = {
+  running: false,
+  paused: false,
+  currentIndex: 0,
+  timer: null
+};
 
 const persist = () => window.api.saveFlows(flows);
 const flow = () => (cur !== null ? flows[cur] : null);
 
-// ---- Gerenciamento de Abas ----
 $('tabFlows').onclick = () => {
   $('tabFlows').classList.add('active');
   $('tabLogs').classList.remove('active');
@@ -94,11 +117,8 @@ $('tabLogs').onclick = () => {
   $('viewFlows').hidden = true;
 };
 
-$('btnClearLog').onclick = () => {
-  $('log').textContent = '';
-};
+$('btnClearLog').onclick = () => { $('log').textContent = ''; };
 
-// ---- Lógica de Zoom no Canvas ----
 function setZoom(newScale, clientX = null, clientY = null) {
   const container = $('canvas-container');
   const viewport = $('canvas-viewport');
@@ -133,6 +153,85 @@ $('btnZoomIn').onclick = () => setZoom(zoomScale + 0.15);
 $('btnZoomOut').onclick = () => setZoom(zoomScale - 0.15);
 $('btnZoomReset').onclick = () => setZoom(1);
 
+function startSimulation() {
+  const f = flow();
+  if (!f || !f.steps || f.steps.length === 0) {
+    alert('Nenhuma ação no fluxo para simular.');
+    return;
+  }
+  if (simState.paused) {
+    simState.paused = false;
+    simState.running = true;
+    updateSimButtons();
+    runSimStep();
+    return;
+  }
+  if (simState.running) return;
+
+  simState.running = true;
+  simState.paused = false;
+  simState.currentIndex = 0;
+  updateSimButtons();
+  runSimStep();
+}
+
+function pauseSimulation() {
+  if (!simState.running) return;
+  simState.running = false;
+  simState.paused = true;
+  if (simState.timer) { clearTimeout(simState.timer); simState.timer = null; }
+  updateSimButtons();
+}
+
+function stopSimulation() {
+  simState.running = false;
+  simState.paused = false;
+  simState.currentIndex = 0;
+  if (simState.timer) { clearTimeout(simState.timer); simState.timer = null; }
+  updateSimButtons();
+  renderSteps();
+}
+
+function updateSimButtons() {
+  $('btnSimStart').disabled = simState.running;
+  $('btnSimPause').disabled = !simState.running;
+  $('btnSimStop').disabled = !simState.running && !simState.paused;
+}
+
+function runSimStep() {
+  const f = flow();
+  if (!f || !simState.running) return;
+
+  if (simState.currentIndex >= f.steps.length) {
+    alert('Simulação concluída com sucesso!');
+    stopSimulation();
+    return;
+  }
+
+  highlightSimNodes();
+  simState.timer = setTimeout(() => {
+    if (!simState.running) return;
+    simState.currentIndex++;
+    runSimStep();
+  }, 1500);
+}
+
+function highlightSimNodes() {
+  const isActiveSim = simState.running || simState.paused;
+  const nodeEls = document.querySelectorAll('.flow-node');
+  nodeEls.forEach((el, i) => {
+    el.classList.remove('sim-active', 'sim-waiting');
+    if (isActiveSim) {
+      if (i === simState.currentIndex) el.classList.add('sim-active');
+      else if (i > simState.currentIndex) el.classList.add('sim-waiting');
+    }
+  });
+}
+
+$('btnSimStart').onclick = () => startSimulation();
+$('btnSimPause').onclick = () => pauseSimulation();
+$('btnSimStop').onclick = () => stopSimulation();
+
 function renderList() {
   $('list').innerHTML = flows.map((f, i) =>
     `<li data-i="${i}" class="${i === cur ? 'sel' : ''}"><span class="dot ${f.enabled ? 'on' : ''}"></span>${esc(f.name)}</li>`
@@ -161,15 +260,8 @@ function updateTriggerUI() {
 
 $('btnExport').onclick = async () => {
   const f = flow();
-  if (!f) {
-    alert('Selecione um fluxo para exportar.');
-    return;
-  }
-  try {
-    await window.api.exportFlow(f);
-  } catch (e) {
-    alert('Erro ao exportar: ' + e.message);
-  }
+  if (!f) { alert('Selecione um fluxo para exportar.'); return; }
+  try { await window.api.exportFlow(f); } catch (e) { alert('Erro ao exportar: ' + e.message); }
 };
 
 $('btnImport').onclick = async () => {
@@ -183,16 +275,14 @@ $('btnImport').onclick = async () => {
       imported.id = uid();
       flows.push(imported);
       cur = flows.length - 1;
+      stopSimulation();
       ensureStepCoords(flow());
       persist();
       renderAll();
     }
-  } catch (e) {
-    alert('Erro ao importar: ' + e.message);
-  }
+  } catch (e) { alert('Erro ao importar: ' + e.message); }
 };
 
-// Garante e salva as coordenadas de todos os passos para respeitar a hierarquia permanentemente
 function ensureStepCoords(f) {
   if (!f || !f.steps) return;
   let changed = false;
@@ -208,9 +298,7 @@ function ensureStepCoords(f) {
       changed = true;
     }
   });
-  if (changed) {
-    persist();
-  }
+  if (changed) persist();
 }
 
 function updateSvgConnections(f) {
@@ -221,12 +309,7 @@ function updateSvgConnections(f) {
   f.steps.forEach((s, i) => {
     if (i < f.steps.length - 1) {
       const nextS = f.steps[i + 1];
-
-      const x1 = s.x + 130;
-      const y1 = s.y + 90;
-      const x2 = nextS.x + 130;
-      const y2 = nextS.y;
-      
+      const x1 = s.x + 130, y1 = s.y + 90, x2 = nextS.x + 130, y2 = nextS.y;
       const pathData = `M ${x1} ${y1} C ${x1} ${y1 + 40}, ${x2} ${y2 - 40}, ${x2} ${y2}`;
       svgHtml += `<path d="${pathData}" stroke="#4c6fff" stroke-width="2.5" fill="none" stroke-dasharray="4,4" opacity="0.7"/>`;
     }
@@ -254,7 +337,9 @@ function renderSteps() {
     
     const actionLabel = ACTIONS[s.type] ? ACTIONS[s.type].label : s.type;
     const customTitle = (s.title || '').trim();
-    const titleText = customTitle ? customTitle : actionLabel;
+    const repeatVal = parseInt(s.params && s.params.repeat) || 1;
+    const repeatText = repeatVal > 1 ? ` (x${repeatVal})` : '';
+    const titleText = (customTitle ? customTitle : actionLabel) + repeatText;
 
     nodesHtml += `
       <div class="flow-node" data-index="${i}">
@@ -278,24 +363,21 @@ function renderSteps() {
 
   nodesContainer.innerHTML = nodesHtml;
 
-  // O CSP (style-src 'self') bloqueia style="" inline vindo de innerHTML,
-  // então a posição é aplicada via JS (CSSOM), que não é bloqueado.
   nodesContainer.querySelectorAll('.flow-node').forEach((el) => {
     const st = f.steps[+el.dataset.index];
     el.style.left = `${st.x}px`;
     el.style.top = `${st.y}px`;
   });
 
+  highlightSimNodes();
   updateSvgConnections(f);
 }
 
 function openStep(i) {
   editing = i;
   const s = i >= 0 ? flow().steps[i] : null;
-  
   const titleInput = $('stepTitle');
   if (titleInput) titleInput.value = (s && s.title) ? s.title : '';
-  
   $('stepType').value = s ? s.type : 'http';
   buildFields($('stepType').value, s ? s.params : null);
   $('dlg').showModal();
@@ -328,7 +410,6 @@ $('dlgOk').onclick = () => {
     step.y = lastStep && typeof lastStep.y === 'number' ? lastStep.y : 80;
     f.steps.push(step);
   }
-  
   persist(); 
   renderSteps();
   $('dlg').close();
@@ -340,19 +421,19 @@ function renderAll() {
   renderEditor(); 
 }
 
-// ---- fluxos
 $('btnNew').onclick = () => {
+  stopSimulation();
   flows.push({ id: uid(), name: `Fluxo ${flows.length + 1}`, enabled: false, trigger: { type: 'manual', value: '' }, steps: [] });
   cur = flows.length - 1;
   persist(); renderAll();
 };
 $('list').onclick = (e) => {
   const li = e.target.closest('li');
-  if (li) { cur = +li.dataset.i; renderAll(); }
+  if (li) { stopSimulation(); cur = +li.dataset.i; renderAll(); }
 };
 $('btnDel').onclick = () => {
   const f = flow();
-  if (f && confirm(`Excluir o fluxo "${f.name}"?`)) { flows.splice(cur, 1); cur = null; persist(); renderAll(); }
+  if (f && confirm(`Excluir o fluxo "${f.name}"?`)) { stopSimulation(); flows.splice(cur, 1); cur = null; persist(); renderAll(); }
 };
 $('btnRun').onclick = () => { const f = flow(); if (f) window.api.runFlow(f.id); };
 
@@ -366,7 +447,6 @@ $('trigType').onchange = () => {
 };
 $('trigValue').oninput = () => { flow().trigger.value = $('trigValue').value; persist(); };
 
-// ---- Ações dos nós no Canvas n8n
 $('nodes-canvas').onclick = (e) => {
   const b = e.target.closest('button');
   if (!b) return;
@@ -384,50 +464,31 @@ $('nodes-canvas').onclick = (e) => {
   if (a === 'up' && i > 0) [f.steps[i - 1], f.steps[i]] = [f.steps[i], f.steps[i - 1]];
   if (a === 'down' && i < f.steps.length - 1) [f.steps[i + 1], f.steps[i]] = [f.steps[i], f.steps[i + 1]];
   
-  if (a !== 'edit') {
-    persist();
-    renderSteps();
-  }
+  if (a !== 'edit') { persist(); renderSteps(); }
 };
 $('btnAdd').onclick = () => openStep(-1);
 
-// ---- Lógica de Arrastar Blocos e Panning do Canvas ----
 let draggingNodeIndex = null;
-let dragStartX = 0;
-let dragStartY = 0;
-let nodeStartX = 0;
-let nodeStartY = 0;
-
-let isPanning = false;
-let panStartX = 0;
-let panStartY = 0;
-let panStartScrollLeft = 0;
-let panStartScrollTop = 0;
+let dragStartX = 0, dragStartY = 0, nodeStartX = 0, nodeStartY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0, panStartScrollLeft = 0, panStartScrollTop = 0;
 
 $('canvas-container').addEventListener('mousedown', (e) => {
   if (e.target.closest('.zoom-controls')) return;
-
   const nodeEl = e.target.closest('.flow-node');
   if (nodeEl) {
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
     draggingNodeIndex = +nodeEl.dataset.index;
     const f = flow();
     const s = f.steps[draggingNodeIndex];
-    
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
+    dragStartX = e.clientX; dragStartY = e.clientY;
     nodeStartX = typeof s.x === 'number' ? s.x : 80;
     nodeStartY = typeof s.y === 'number' ? s.y : 80;
-    
     nodeEl.style.zIndex = 1000;
     e.stopPropagation();
     return;
   }
-
-  // Arrastar o fundo do canvas (Pan)
   isPanning = true;
-  panStartX = e.clientX;
-  panStartY = e.clientY;
+  panStartX = e.clientX; panStartY = e.clientY;
   panStartScrollLeft = $('canvas-container').scrollLeft;
   panStartScrollTop = $('canvas-container').scrollTop;
 });
@@ -437,23 +498,15 @@ document.addEventListener('mousemove', (e) => {
     const f = flow();
     if (!f) return;
     const s = f.steps[draggingNodeIndex];
-    
     const dx = (e.clientX - dragStartX) / zoomScale;
     const dy = (e.clientY - dragStartY) / zoomScale;
-    
     s.x = Math.max(10, Math.round(nodeStartX + dx));
     s.y = Math.max(10, Math.round(nodeStartY + dy));
-    
     const nodeEl = document.querySelector(`.flow-node[data-index="${draggingNodeIndex}"]`);
-    if (nodeEl) {
-      nodeEl.style.left = `${s.x}px`;
-      nodeEl.style.top = `${s.y}px`;
-    }
-    
+    if (nodeEl) { nodeEl.style.left = `${s.x}px`; nodeEl.style.top = `${s.y}px`; }
     updateSvgConnections(f);
     return;
   }
-
   if (isPanning) {
     const container = $('canvas-container');
     container.scrollLeft = panStartScrollLeft - (e.clientX - panStartX);
@@ -475,37 +528,30 @@ document.addEventListener('mouseup', () => {
 function buildFields(type, saved) {
   $('fields').innerHTML = ACTIONS[type].fields.map((fd) => {
     const val = saved && saved[fd.k] !== undefined ? saved[fd.k] : fd.d;
-    const input = fd.multi
-      ? `<textarea data-k="${fd.k}">${esc(val)}</textarea>`
-      : `<input data-k="${fd.k}" value="${esc(val)}">`;
+    const input = fd.multi ? `<textarea data-k="${fd.k}">${esc(val)}</textarea>` : `<input data-k="${fd.k}" value="${esc(val)}">`;
     return `<label>${esc(fd.l)}${input}</label>`;
   }).join('');
   renderGuide(type);
 }
 
-// ---- guia de teclas
 const KEY_GUIDE = [
   ['Atalhos do Windows', [
-    ['Win+R', 'Abre o Executar'], ['Win+E', 'Abre o Explorador de Arquivos'], ['Win+D', 'Mostra a área de trabalho'],
-    ['Win+I', 'Abre as Configurações'], ['Win+S', 'Abre a pesquisa do Windows'], ['Alt+Tab', 'Alterna entre janelas'],
-    ['Alt+F4', 'Fecha a janela atual'], ['Ctrl+Shift+Esc', 'Abre o Gerenciador de Tarefas'],
-    ['Win+Shift+S', 'Captura de tela (recorte)']]],
+    ['Win+R', 'Abre o Executar'], ['Win+E', 'Explorador de Arquivos'], ['Win+D', 'Área de trabalho'],
+    ['Win+I', 'Configurações'], ['Win+S', 'Pesquisa'], ['Alt+Tab', 'Alterna janelas'],
+    ['Alt+F4', 'Fecha janela'], ['Ctrl+Shift+Esc', 'Gerenciador de Tarefas'], ['Win+Shift+S', 'Captura de tela']]],
   ['Edição', [
     ['Ctrl+A', 'Selecionar tudo'], ['Ctrl+C', 'Copiar'], ['Ctrl+X', 'Recortar'], ['Ctrl+V', 'Colar'],
-    ['Ctrl+Z', 'Desfazer'], ['Ctrl+Y', 'Refazer'], ['Ctrl+S', 'Salvar'], ['Ctrl+F', 'Localizar'], ['Ctrl+P', 'Imprimir']]],
+    ['Ctrl+Z', 'Desfazer'], ['Ctrl+Y', 'Refazer'], ['Ctrl+S', 'Salvar'], ['Ctrl+F', 'Localizar']]],
   ['Navegador', [
-    ['Ctrl+T', 'Nova aba'], ['Ctrl+W', 'Fecha a aba'], ['Ctrl+L', 'Seleciona a barra de endereço'],
-    ['Ctrl+E', 'Pesquisa na barra de endereço (Chrome/Edge)'], ['F5', 'Recarrega a página'],
-    ['Ctrl+Shift+T', 'Reabre a aba fechada'], ['Ctrl+Tab', 'Próxima aba'], ['F12', 'Ferramentas do desenvolvedor']]],
+    ['Ctrl+T', 'Nova aba'], ['Ctrl+W', 'Fecha aba'], ['Ctrl+L', 'Barra de endereço'],
+    ['F5', 'Recarregar'], ['Ctrl+Shift+T', 'Reabre aba fechada'], ['Ctrl+Tab', 'Próxima aba'], ['F12', 'DevTools']]],
   ['Teclas simples', [
-    ['Enter', 'Confirmar'], ['Tab', 'Próximo campo'], ['Shift+Tab', 'Campo anterior'], ['Esc', 'Cancelar / fechar'],
-    ['Space', 'Barra de espaço'], ['Backspace', 'Apaga à esquerda'], ['Delete', 'Apaga à direita'],
-    ['Home', 'Início da linha'], ['End', 'Fim da linha'], ['PageUp', 'Página para cima'], ['PageDown', 'Página para baixo'],
-    ['Up', 'Seta para cima'], ['Down', 'Seta para a baixo'], ['Left', 'Seta para a esquerda'], ['Right', 'Seta para a direita'],
-    ['PrintScreen', 'Captura a tela inteira']]],
+    ['Enter', 'Confirmar'], ['Tab', 'Próximo campo'], ['Esc', 'Cancelar'], ['Space', 'Espaço'],
+    ['Backspace', 'Apagar esq'], ['Delete', 'Apagar dir'], ['Home', 'Início'], ['End', 'Fim'],
+    ['PageUp', 'Pág acima'], ['PageDown', 'Pág abaixo'], ['Up', 'Seta cima'], ['Down', 'Seta baixo'],
+    ['Left', 'Seta esq'], ['Right', 'Seta dir'], ['PrintScreen', 'Print Screen']]],
   ['Exemplos de sequência', [
-    ['Win+R, Enter', 'Abre o Executar e confirma'], ['Ctrl+A, Ctrl+C', 'Seleciona tudo e copia'],
-    ['Alt+Tab, Alt+Tab', 'Volta duas janelas']]]
+    ['Win+R, Enter', 'Executar e confirmar'], ['Ctrl+A, Ctrl+C', 'Selecionar e copiar']]]
 ];
 
 function renderGuide(type) {
@@ -513,13 +559,11 @@ function renderGuide(type) {
   if (type !== 'press_keys') { g.hidden = true; g.innerHTML = ''; return; }
   g.hidden = false;
   g.innerHTML =
-    '<b>Guia de teclas</b><small>Clique em um exemplo para usar (Shift+clique adiciona à sequência). ' +
-    'Combine teclas com + e separe passos com vírgula. Para digitar um texto, use a ação "Digitar texto".</small>' +
+    '<b>Guia de teclas</b><small>Clique em um exemplo para usar (Shift+clique adiciona à sequência).</small>' +
     KEY_GUIDE.map(([title, items]) =>
       `<div class="gt">${esc(title)}</div><div class="chips">` +
       items.map(([k, d]) => `<button type="button" class="chip" data-key="${esc(k)}" title="${esc(d)}"><b>${esc(k)}</b><span>${esc(d)}</span></button>`).join('') +
-      '</div>').join('') +
-    '<small>Letras: A–Z · Números: 0–9 · Funções: F1–F12 · Modificadores: Ctrl, Alt, Shift, Win</small>';
+      '</div>').join('');
 }
 
 $('guide').onclick = (e) => {
@@ -530,7 +574,6 @@ $('guide').onclick = (e) => {
   input.value = e.shiftKey && input.value.trim() ? input.value.trim() + ', ' + b.dataset.key : b.dataset.key;
 };
 
-// ---- gravador de mouse
 $('btnRec').onclick = () => {
   if (!flow()) return;
   window.api.recStart({ pauses: $('recPauses').checked });
@@ -538,7 +581,7 @@ $('btnRec').onclick = () => {
 window.api.onRecDone((steps) => {
   const f = flow();
   if (f && steps.length) { 
-    steps.forEach((step, idx) => {
+    steps.forEach((step) => {
       const last = f.steps.length > 0 ? f.steps[f.steps.length - 1] : null;
       step.x = last && typeof last.x === 'number' ? last.x + 340 : 80;
       step.y = last && typeof last.y === 'number' ? last.y : 80;
@@ -549,7 +592,6 @@ window.api.onRecDone((steps) => {
   }
 });
 
-// ---- log / autostart
 window.api.onLog((msg) => {
   const el = $('log');
   el.textContent += msg + '\n';
@@ -557,16 +599,12 @@ window.api.onLog((msg) => {
 });
 $('autostart').onchange = () => window.api.setAutostart($('autostart').checked);
 
-// ---- init
 (async function init() {
   $('trigType').innerHTML = Object.entries(TRIGGERS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
   $('stepType').innerHTML = Object.entries(ACTIONS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
   $('trigType').addEventListener('change', updateTriggerUI);
   flows = await window.api.getFlows();
   $('autostart').checked = await window.api.getAutostart();
-  if (flows.length) {
-    cur = 0;
-    ensureStepCoords(flows[cur]);
-  }
+  if (flows.length) { cur = 0; ensureStepCoords(flows[cur]); }
   renderAll();
 })();

@@ -1,6 +1,6 @@
 {
   "name": "autoflow",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "AutoFlow - automacao de fluxos para Windows",
   "main": "main.js",
   "author": "AutoFlow",

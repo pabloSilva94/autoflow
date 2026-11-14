@@ -181,15 +181,19 @@ textarea:focus {
 button {
   cursor: pointer;
 }
-button:hover {
+button:hover:not(:disabled) {
   background: #262d40;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 button.primary {
   background: #4c6fff;
   border-color: #4c6fff;
   color: #fff;
 }
-button.primary:hover {
+button.primary:hover:not(:disabled) {
   background: #6280ff;
 }
 button.danger {
@@ -407,13 +411,13 @@ dialog select,
   position: absolute;
   width: 260px;
   background: #1a1e2a;
-  border: 1px solid #2f3648;
+  border: 2px solid #2f3648;
   border-radius: 12px;
   padding: 12px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    border-color 0.25s,
+    box-shadow 0.25s;
   cursor: grab;
   user-select: none;
 }
@@ -425,6 +429,17 @@ dialog select,
 .flow-node:hover {
   border-color: #4c6fff;
   box-shadow: 0 8px 24px rgba(76, 111, 255, 0.25);
+}
+
+/* ---- Estados Visuais da Simulação ---- */
+.flow-node.sim-active {
+  border-color: #3ddc84 !important;
+  box-shadow: 0 0 18px rgba(61, 220, 132, 0.45) !important;
+}
+
+.flow-node.sim-waiting {
+  border-color: #ffaa00 !important;
+  box-shadow: 0 0 14px rgba(255, 170, 0, 0.3) !important;
 }
 
 .flow-node .node-header {
