@@ -16,8 +16,10 @@ const nodemailer = require("nodemailer");
 const { pathToFileURL } = require("url");
 
 const DATA = () => path.join(app.getPath("userData"), "flows.json");
+const FOLDERS = () => path.join(app.getPath("userData"), "folders.json");
 let win;
 let flows = [];
+let folders = [];
 const nextRun = new Map();
 const running = new Set();
 let statusOverlay = null;
@@ -27,6 +29,12 @@ const load = () => {
     flows = JSON.parse(fs.readFileSync(DATA(), "utf8"));
   } catch {
     flows = [];
+  }
+  try {
+    folders = JSON.parse(fs.readFileSync(FOLDERS(), "utf8"));
+    if (!Array.isArray(folders)) folders = [];
+  } catch {
+    folders = [];
   }
 };
 const save = () => {
@@ -623,6 +631,12 @@ if (!app.requestSingleInstanceLock()) {
 
 ipcMain.handle("flows:get", () => flows);
 ipcMain.handle("flows:save", (_, f) => { flows = f; save(); });
+ipcMain.handle("folders:get", () => folders);
+ipcMain.handle("folders:save", (_, f) => {
+  folders = Array.isArray(f) ? f : [];
+  fs.mkdirSync(path.dirname(FOLDERS()), { recursive: true });
+  fs.writeFileSync(FOLDERS(), JSON.stringify(folders, null, 2));
+});
 ipcMain.handle("flow:run", (_, id) => { const f = flows.find((x) => x.id === id); if (f) runFlow(f); });
 ipcMain.handle("flow:export", async (_, flow) => {
   const { filePath } = await dialog.showSaveDialog({

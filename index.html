@@ -14,7 +14,10 @@
       <button id="tabLogs" class="tab-btn">Logs</button>
     </div>
     <ul id="list"></ul>
-    <button id="btnNew" class="primary">+ Novo fluxo</button>
+    <div class="row gap-sm">
+      <button id="btnNew" class="primary flex1">+ Novo fluxo</button>
+      <button id="btnNewFolder" title="Nova pasta">📁+</button>
+    </div>
     <div class="row gap-sm">
       <button id="btnExport" class="flex1">Exportar</button>
       <button id="btnImport" class="flex1">Importar</button>
@@ -30,6 +33,7 @@
       <section id="editor" hidden>
         <div class="row">
           <input id="name" class="title" placeholder="Nome do fluxo">
+          <select id="flowFolder" class="folder-select" title="Pasta do fluxo"></select>
           <label class="switch"><input type="checkbox" id="enabled"> Ativo</label>
           <button id="btnRun">▶ Executar agora</button>
           <button id="btnDel" class="danger">Excluir</button>
@@ -109,6 +113,18 @@
       <button id="dlgOk" class="primary">Salvar</button>
     </div>
     <div id="tipBox" class="tip-box" hidden></div>
+  </dialog>
+
+  <dialog id="dlgFolder" class="small-dlg">
+    <h3 id="folderTitle">Nova pasta</h3>
+    <div class="field-group">
+      <label for="folderName">Nome da pasta</label>
+      <input id="folderName" placeholder="Ex: Trabalho, Pessoal, Testes" maxlength="60">
+    </div>
+    <div class="row end">
+      <button id="folderCancel">Cancelar</button>
+      <button id="folderOk" class="primary">Salvar</button>
+    </div>
   </dialog>
 
   <script src="renderer.js"></script>

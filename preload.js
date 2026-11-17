@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   getFlows: () => ipcRenderer.invoke('flows:get'),
   saveFlows: (flows) => ipcRenderer.invoke('flows:save', flows),
+  getFolders: () => ipcRenderer.invoke('folders:get'),
+  saveFolders: (folders) => ipcRenderer.invoke('folders:save', folders),
   runFlow: (id) => ipcRenderer.invoke('flow:run', id),
   getAutostart: () => ipcRenderer.invoke('auto:get'),
   setAutostart: (v) => ipcRenderer.invoke('auto:set', v),

@@ -120,6 +120,9 @@ let flows = [];
 let cur = null;
 let editing = -1;
 let zoomScale = 1;
+let folders = [];        // [{ id, name, open }]
+let selFolder = null;    // pasta "ativa": recebe os novos fluxos
+let folderEditId = null; // null = criando pasta, id = renomeando
 
 let simState = {
   running: false,
@@ -129,6 +132,7 @@ let simState = {
 };
 
 const persist = () => window.api.saveFlows(flows);
+const persistFolders = () => window.api.saveFolders(folders);
 const flow = () => (cur !== null ? flows[cur] : null);
 
 $('tabFlows').onclick = () => {
@@ -262,11 +266,142 @@ $('btnSimStart').onclick = () => startSimulation();
 $('btnSimPause').onclick = () => pauseSimulation();
 $('btnSimStop').onclick = () => stopSimulation();
 
-function renderList() {
-  $('list').innerHTML = flows.map((f, i) =>
-    `<li data-i="${i}" class="${i === cur ? 'sel' : ''}"><span class="dot ${f.enabled ? 'on' : ''}"></span>${esc(f.name)}</li>`
-  ).join('');
+// ---------- Pastas ----------
+const folderById = (id) => folders.find((x) => x.id === id) || null;
+
+function flowLi(f, i, inFolder) {
+  return `<li class="${inFolder ? 'in-folder ' : ''}${i === cur ? 'sel' : ''}" data-i="${i}" data-drop="${inFolder ? f.folderId : ''}" draggable="true">` +
+    `<span class="dot ${f.enabled ? 'on' : ''}"></span><span class="li-name">${esc(f.name)}</span></li>`;
 }
+
+function renderList() {
+  const byFolder = new Map(folders.map((fo) => [fo.id, []]));
+  const loose = [];
+  flows.forEach((f, i) => { (byFolder.get(f.folderId) || loose).push([f, i]); });
+
+  let html = '';
+  folders.forEach((fo) => {
+    const items = byFolder.get(fo.id);
+    html += `<li class="folder-li ${fo.id === selFolder ? 'sel-folder' : ''}" data-folder="${fo.id}" data-drop="${fo.id}">` +
+      `<span class="caret">${fo.open ? '▾' : '▸'}</span><span class="f-ico">${fo.open ? '📂' : '📁'}</span>` +
+      `<span class="li-name">${esc(fo.name)}</span><span class="f-count">${items.length}</span>` +
+      `<span class="f-actions"><button type="button" class="mini" data-fa="rename" title="Renomear pasta">✎</button>` +
+      `<button type="button" class="mini" data-fa="del" title="Excluir pasta">✕</button></span></li>`;
+    if (fo.open) {
+      if (!items.length) html += `<li class="list-empty" data-drop="${fo.id}">Pasta vazia — arraste fluxos para cá</li>`;
+      else html += items.map(([f, i]) => flowLi(f, i, true)).join('');
+    }
+  });
+  if (folders.length && loose.length) html += `<li class="list-sep" data-sep="1" data-drop="">Sem pasta</li>`;
+  html += loose.map(([f, i]) => flowLi(f, i, false)).join('');
+  $('list').innerHTML = html;
+}
+
+function fillFolderSelect(f) {
+  $('flowFolder').innerHTML = '<option value="">📂 Sem pasta</option>' +
+    folders.map((fo) => `<option value="${fo.id}">📁 ${esc(fo.name)}</option>`).join('');
+  $('flowFolder').value = folderById(f.folderId) ? f.folderId : '';
+}
+
+function openFolderDialog(id) {
+  folderEditId = id || null;
+  const fo = id ? folderById(id) : null;
+  $('folderTitle').textContent = fo ? 'Renomear pasta' : 'Nova pasta';
+  $('folderName').value = fo ? fo.name : '';
+  $('dlgFolder').showModal();
+  $('folderName').focus();
+  $('folderName').select();
+}
+
+function saveFolderDialog() {
+  const name = $('folderName').value.trim();
+  if (!name) { $('folderName').focus(); return; }
+  if (folderEditId) {
+    const fo = folderById(folderEditId);
+    if (fo) fo.name = name;
+  } else {
+    const fo = { id: uid(), name, open: true };
+    folders.push(fo);
+    selFolder = fo.id;
+  }
+  persistFolders();
+  $('dlgFolder').close();
+  renderAll();
+}
+
+function deleteFolder(id) {
+  const fo = folderById(id);
+  if (!fo) return;
+  const n = flows.filter((f) => f.folderId === id).length;
+  const msg = n
+    ? `Excluir a pasta "${fo.name}"?\n\nOs ${n} fluxo(s) dentro dela NÃO serão apagados: voltam para "Sem pasta".`
+    : `Excluir a pasta "${fo.name}"?`;
+  if (!confirm(msg)) return;
+  flows.forEach((f) => { if (f.folderId === id) delete f.folderId; });
+  folders = folders.filter((x) => x.id !== id);
+  if (selFolder === id) selFolder = null;
+  persist(); persistFolders(); renderAll();
+}
+
+function moveFlowToFolder(f, id) {
+  if (id && folderById(id)) {
+    f.folderId = id;
+    const fo = folderById(id);
+    if (!fo.open) { fo.open = true; persistFolders(); }
+  } else {
+    delete f.folderId;
+  }
+}
+
+$('btnNewFolder').onclick = () => openFolderDialog(null);
+$('folderCancel').onclick = () => $('dlgFolder').close();
+$('folderOk').onclick = saveFolderDialog;
+$('folderName').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveFolderDialog(); } };
+
+$('flowFolder').onchange = () => {
+  const f = flow();
+  if (!f) return;
+  const id = $('flowFolder').value;
+  moveFlowToFolder(f, id);
+  selFolder = id || null;
+  persist(); renderList();
+};
+
+// Arrastar fluxo para uma pasta (ou para "Sem pasta" / área vazia da lista)
+let dragFlowIdx = null;
+const clearDropMarks = () => {
+  $('list').classList.remove('drop-root');
+  $('list').querySelectorAll('.drop-over').forEach((el) => el.classList.remove('drop-over'));
+};
+const dropTarget = (e) => { const t = e.target.closest('li[data-drop]'); return t ? t.dataset.drop : ''; };
+
+$('list').addEventListener('dragstart', (e) => {
+  const li = e.target.closest('li[data-i]');
+  if (!li) return;
+  dragFlowIdx = +li.dataset.i;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(dragFlowIdx));
+});
+$('list').addEventListener('dragend', () => { dragFlowIdx = null; clearDropMarks(); });
+$('list').addEventListener('dragover', (e) => {
+  if (dragFlowIdx === null) return;
+  e.preventDefault();
+  clearDropMarks();
+  const id = dropTarget(e);
+  const head = id ? $('list').querySelector(`li.folder-li[data-folder="${id}"]`) : null;
+  if (head) head.classList.add('drop-over'); else $('list').classList.add('drop-root');
+});
+$('list').addEventListener('drop', (e) => {
+  if (dragFlowIdx === null) return;
+  e.preventDefault();
+  const f = flows[dragFlowIdx];
+  const id = dropTarget(e);
+  clearDropMarks();
+  dragFlowIdx = null;
+  if (!f) return;
+  moveFlowToFolder(f, id);
+  persist(); renderAll();
+});
 
 function renderEditor() {
   const f = flow();
@@ -275,6 +410,7 @@ function renderEditor() {
   if (!f) return;
   $('name').value = f.name;
   $('enabled').checked = f.enabled;
+  fillFolderSelect(f);
   $('trigType').value = f.trigger.type;
   $('trigValue').value = f.trigger.value;
   updateTriggerUI();
@@ -291,7 +427,7 @@ function updateTriggerUI() {
 $('btnExport').onclick = async () => {
   const f = flow();
   if (!f) { alert('Selecione um fluxo para exportar.'); return; }
-  try { await window.api.exportFlow(f); } catch (e) { alert('Erro ao exportar: ' + e.message); }
+  try { const { folderId, ...portable } = f; await window.api.exportFlow(portable); } catch (e) { alert('Erro ao exportar: ' + e.message); }
 };
 
 $('btnImport').onclick = async () => {
@@ -303,6 +439,7 @@ $('btnImport').onclick = async () => {
         return;
       }
       imported.id = uid();
+      if (folderById(selFolder)) imported.folderId = selFolder; else delete imported.folderId;
       flows.push(imported);
       cur = flows.length - 1;
       stopSimulation();
@@ -455,13 +592,33 @@ function renderAll() {
 
 $('btnNew').onclick = () => {
   stopSimulation();
-  flows.push({ id: uid(), name: `Fluxo ${flows.length + 1}`, enabled: false, trigger: { type: 'manual', value: '' }, steps: [] });
+  const target = folderById(selFolder);
+  if (target && !target.open) { target.open = true; persistFolders(); }
+  flows.push({ id: uid(), name: `Fluxo ${flows.length + 1}`, folderId: target ? target.id : undefined, enabled: false, trigger: { type: 'manual', value: '' }, steps: [] });
   cur = flows.length - 1;
   persist(); renderAll();
 };
 $('list').onclick = (e) => {
-  const li = e.target.closest('li');
-  if (li) { stopSimulation(); cur = +li.dataset.i; renderAll(); }
+  const head = e.target.closest('li.folder-li');
+  if (head) {
+    const fo = folderById(head.dataset.folder);
+    if (!fo) return;
+    const act = e.target.closest('[data-fa]');
+    if (act && act.dataset.fa === 'rename') { openFolderDialog(fo.id); return; }
+    if (act && act.dataset.fa === 'del') { deleteFolder(fo.id); return; }
+    fo.open = !fo.open;
+    selFolder = fo.id;
+    persistFolders(); renderList();
+    return;
+  }
+  if (e.target.closest('li[data-sep]')) { selFolder = null; renderList(); return; }
+  const li = e.target.closest('li[data-i]');
+  if (li) {
+    stopSimulation();
+    cur = +li.dataset.i;
+    selFolder = folderById(flow().folderId) ? flow().folderId : null;
+    renderAll();
+  }
 };
 $('btnDel').onclick = () => {
   const f = flow();
@@ -710,7 +867,8 @@ $('autostart').onchange = () => window.api.setAutostart($('autostart').checked);
   buildTypePicker();
   $('trigType').addEventListener('change', updateTriggerUI);
   flows = await window.api.getFlows();
+  folders = (await window.api.getFolders()) || [];
   $('autostart').checked = await window.api.getAutostart();
-  if (flows.length) { cur = 0; ensureStepCoords(flows[cur]); }
+  if (flows.length) { cur = 0; ensureStepCoords(flows[cur]); if (folderById(flows[cur].folderId)) selFolder = flows[cur].folderId; }
   renderAll();
 })();

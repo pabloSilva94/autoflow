@@ -652,3 +652,102 @@ dialog select,
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ---- Pastas de fluxos ---- */
+#list li .li-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#list li.folder-li {
+  font-weight: 600;
+  gap: 6px;
+  padding: 8px 8px;
+}
+#list li.folder-li.sel-folder {
+  box-shadow: inset 2px 0 0 #4c6fff;
+}
+#list li.in-folder {
+  padding-left: 26px;
+}
+.caret {
+  width: 10px;
+  color: #8089a0;
+  font-size: 11px;
+  flex: none;
+}
+.f-ico {
+  font-size: 14px;
+  flex: none;
+}
+.f-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8089a0;
+  background: #1f2430;
+  border-radius: 10px;
+  padding: 1px 7px;
+  flex: none;
+}
+.f-actions {
+  display: none;
+  gap: 2px;
+  flex: none;
+}
+#list li.folder-li:hover .f-actions {
+  display: flex;
+}
+#list li.folder-li:hover .f-count {
+  display: none;
+}
+button.mini {
+  background: transparent;
+  border: none;
+  padding: 0 5px;
+  font-size: 12px;
+  color: #8089a0;
+  border-radius: 6px;
+}
+button.mini:hover:not(:disabled) {
+  background: #2f3648;
+  color: #fff;
+}
+#list li.list-sep {
+  cursor: default;
+  margin-top: 8px;
+  padding: 6px 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8089a0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#list li.list-sep:hover,
+#list li.list-empty:hover {
+  background: transparent;
+}
+#list li.list-empty {
+  cursor: default;
+  padding: 6px 8px 6px 26px;
+  font-size: 12px;
+  font-style: italic;
+  color: #6b738a;
+}
+#list li.drop-over {
+  background: #2a3350;
+  outline: 1px dashed #4c6fff;
+  outline-offset: -1px;
+}
+#list.drop-root {
+  outline: 1px dashed #4c6fff;
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+.folder-select {
+  max-width: 190px;
+}
+.small-dlg {
+  width: 360px;
+}
