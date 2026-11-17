@@ -46,7 +46,7 @@
 
         <div class="card canvas-card">
           <div class="row between">
-            <h3>Fluxo de Trabalho (Canvas n8n)</h3>
+            <h3>Fluxo de Trabalho</h3>
             <div class="row">
               <label class="switch"><input type="checkbox" id="recPauses" checked> gravar pausas</label>
               <button id="btnRec">⏺ Gravar mouse</button>
@@ -95,8 +95,10 @@
     </div>
 
     <div class="field-group">
-      <label for="stepType">Tipo de Ação</label>
-      <select id="stepType"></select>
+      <label for="typeBtn">Tipo de Ação</label>
+      <select id="stepType" hidden></select>
+      <button type="button" id="typeBtn" class="type-btn"></button>
+      <div id="typePanel" class="type-panel" hidden></div>
     </div>
 
     <div id="fields"></div>
@@ -106,6 +108,7 @@
       <button id="dlgCancel">Cancelar</button>
       <button id="dlgOk" class="primary">Salvar</button>
     </div>
+    <div id="tipBox" class="tip-box" hidden></div>
   </dialog>
 
   <script src="renderer.js"></script>

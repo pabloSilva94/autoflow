@@ -77,6 +77,34 @@ const ACTIONS = {
     { k: 'repeat', l: 'Repetições (vezes)', d: '1' }] }
 };
 
+const ACTION_GROUPS = [
+  { label: 'Mouse', items: ['mouse_click', 'mouse_scroll', 'mouse_pos'] },
+  { label: 'Teclado', items: ['type_text', 'press_keys'] },
+  { label: 'Web e rede', items: ['http', 'http_upload', 'web_upload'] },
+  { label: 'Arquivos e sistema', items: ['command', 'open', 'write_file'] },
+  { label: 'Comunicação', items: ['message', 'email'] },
+  { label: 'Lógica e controle', items: ['delay', 'set_var', 'if_contains'] }
+];
+
+const ACTION_META = {
+  mouse_click: { icon: '🖱️', desc: 'Move o cursor até a posição X/Y da tela e clica (clique simples, duplo ou com o botão direito).' },
+  mouse_scroll: { icon: '↕️', desc: 'Rola a página para cima ou para baixo usando a roda do mouse, opcionalmente numa posição X/Y.' },
+  mouse_pos: { icon: '📍', desc: 'Espera alguns segundos para você posicionar o mouse e devolve as coordenadas X,Y. Útil para descobrir onde clicar.' },
+  type_text: { icon: '⌨️', desc: 'Digita um texto como se você estivesse no teclado, com Enter opcional no final.' },
+  press_keys: { icon: '🔣', desc: 'Aperta teclas ou atalhos, como Win+R, Ctrl+C ou uma sequência (Win+R, Enter).' },
+  http: { icon: '🌐', desc: 'Faz uma requisição HTTP (GET, POST...) para uma URL e guarda a resposta em {{last}}.' },
+  http_upload: { icon: '📤', desc: 'Envia um arquivo para uma URL via HTTP (multipart/form-data).' },
+  web_upload: { icon: '🧭', desc: 'Abre uma página web em segundo plano, anexa um arquivo no campo de upload e clica em enviar automaticamente.' },
+  command: { icon: '💻', desc: 'Executa um comando ou script no cmd do Windows e guarda a saída em {{last}}.' },
+  open: { icon: '🚀', desc: 'Abre um programa, arquivo, pasta ou site no navegador padrão.' },
+  write_file: { icon: '📝', desc: 'Grava (ou adiciona) um conteúdo em um arquivo, com opção para quando ele já existir.' },
+  message: { icon: '💬', desc: 'Mostra uma janela de aviso na tela com título e texto.' },
+  email: { icon: '✉️', desc: 'Envia um e-mail usando um servidor SMTP (ex.: Gmail com senha de app).' },
+  delay: { icon: '⏱️', desc: 'Pausa o fluxo por alguns segundos antes de seguir para a próxima ação.' },
+  set_var: { icon: '📦', desc: 'Cria ou altera uma variável para usar depois com {{nome}}.' },
+  if_contains: { icon: '🔀', desc: 'Encerra o fluxo se a saída da ação anterior não contiver o texto procurado.' }
+};
+
 const TRIGGERS = {
   manual: { label: 'Manual (só pelo botão)', hint: 'Só executa quando você clicar em "Executar agora".', ph: '' },
   interval: { label: 'A cada X segundos', hint: 'Exemplo: 60 = a cada minuto; 3600 = a cada hora.', ph: '60' },
@@ -209,11 +237,13 @@ function runSimStep() {
   }
 
   highlightSimNodes();
+  const st = f.steps[simState.currentIndex];
+  const waitMs = (parseFloat(String((st.params && st.params.after) || '0').replace(',', '.')) || 0) * 1000;
   simState.timer = setTimeout(() => {
     if (!simState.running) return;
     simState.currentIndex++;
     runSimStep();
-  }, 1500);
+  }, 1500 + waitMs);
 }
 
 function highlightSimNodes() {
@@ -332,14 +362,16 @@ function renderSteps() {
   let nodesHtml = '';
   
   f.steps.forEach((s, i) => {
-    const sum = Object.entries(s.params || {}).filter(([k]) => k !== 'password')
+    const sum = Object.entries(s.params || {}).filter(([k]) => k !== 'password' && k !== 'after')
       .map(([, v]) => String(v).replace(/\s+/g, ' ').slice(0, 30)).join(' | ');
     
     const actionLabel = ACTIONS[s.type] ? ACTIONS[s.type].label : s.type;
     const customTitle = (s.title || '').trim();
     const repeatVal = parseInt(s.params && s.params.repeat) || 1;
     const repeatText = repeatVal > 1 ? ` (x${repeatVal})` : '';
-    const titleText = (customTitle ? customTitle : actionLabel) + repeatText;
+    const waitVal = parseFloat(String((s.params && s.params.after) || '0').replace(',', '.')) || 0;
+    const waitText = waitVal > 0 ? ` ⏱${waitVal}s` : '';
+    const titleText = (customTitle ? customTitle : actionLabel) + repeatText + waitText;
 
     nodesHtml += `
       <div class="flow-node" data-index="${i}">
@@ -525,8 +557,82 @@ document.addEventListener('mouseup', () => {
   isPanning = false;
 });
 
+const WAIT_FIELD = { k: 'after', l: 'Aguardar depois de executar (segundos)', d: '0' };
+
+const shortName = (k) => {
+  const l = ACTIONS[k].label.replace(/^(Mouse|Teclado):\s*/i, '');
+  return l.charAt(0).toUpperCase() + l.slice(1);
+};
+
+function typeItemHtml(k) {
+  const m = ACTION_META[k] || {};
+  return `<button type="button" class="type-item" data-type="${k}">` +
+    `<span class="type-ico">${m.icon || '⚙️'}</span>` +
+    `<span class="type-name">${esc(shortName(k))}</span>` +
+    `<span class="tip" data-tip="${esc(m.desc || ACTIONS[k].label)}">?</span></button>`;
+}
+
+function buildTypePicker() {
+  const known = new Set(ACTION_GROUPS.flatMap((g) => g.items));
+  const groups = ACTION_GROUPS.map((g) => ({ label: g.label, items: g.items.filter((k) => ACTIONS[k]) }));
+  const rest = Object.keys(ACTIONS).filter((k) => !known.has(k));
+  if (rest.length) groups.push({ label: 'Outros', items: rest });
+  let opts = '';
+  let panel = '';
+  groups.forEach((g) => {
+    if (!g.items.length) return;
+    opts += `<optgroup label="${esc(g.label)}">` +
+      g.items.map((k) => `<option value="${k}">${esc(ACTIONS[k].label)}</option>`).join('') + '</optgroup>';
+    panel += `<div class="type-group">${esc(g.label)}</div>` + g.items.map(typeItemHtml).join('');
+  });
+  $('stepType').innerHTML = opts;
+  $('typePanel').innerHTML = panel;
+}
+
+function syncTypePicker(type) {
+  const m = ACTION_META[type] || {};
+  $('typeBtn').innerHTML =
+    `<span class="type-ico">${m.icon || '⚙️'}</span>` +
+    `<span class="type-name">${esc(shortName(type))}</span>` +
+    `<span class="tip" data-tip="${esc(m.desc || ACTIONS[type].label)}">?</span>` +
+    '<span class="type-caret">▾</span>';
+  $('typePanel').querySelectorAll('.type-item').forEach((b) => b.classList.toggle('sel', b.dataset.type === type));
+  $('typePanel').hidden = true;
+}
+
+$('typeBtn').onclick = (e) => {
+  if (e.target.closest('.tip')) return;
+  $('typePanel').hidden = !$('typePanel').hidden;
+};
+$('typePanel').addEventListener('click', (e) => {
+  if (e.target.closest('.tip')) return;
+  const b = e.target.closest('.type-item');
+  if (!b) return;
+  $('stepType').value = b.dataset.type;
+  $('stepType').onchange();
+  $('tipBox').hidden = true;
+});
+
+// Balão de ajuda do "?" (fica dentro do <dialog> para aparecer acima dele)
+$('dlg').addEventListener('mouseover', (e) => {
+  const t = e.target.closest('.tip');
+  if (!t) return;
+  const box = $('tipBox');
+  box.textContent = t.dataset.tip;
+  box.hidden = false;
+  const r = t.getBoundingClientRect();
+  box.style.left = Math.max(8, Math.min(r.right - box.offsetWidth, window.innerWidth - box.offsetWidth - 8)) + 'px';
+  let top = r.bottom + 8;
+  if (top + box.offsetHeight > window.innerHeight - 8) top = r.top - box.offsetHeight - 8;
+  box.style.top = Math.max(8, top) + 'px';
+});
+$('dlg').addEventListener('mouseout', (e) => { if (e.target.closest('.tip')) $('tipBox').hidden = true; });
+$('dlg').addEventListener('close', () => { $('tipBox').hidden = true; });
+
 function buildFields(type, saved) {
-  $('fields').innerHTML = ACTIONS[type].fields.map((fd) => {
+  syncTypePicker(type);
+  const fields = [...ACTIONS[type].fields, WAIT_FIELD];
+  $('fields').innerHTML = fields.map((fd) => {
     const val = saved && saved[fd.k] !== undefined ? saved[fd.k] : fd.d;
     const input = fd.multi ? `<textarea data-k="${fd.k}">${esc(val)}</textarea>` : `<input data-k="${fd.k}" value="${esc(val)}">`;
     return `<label>${esc(fd.l)}${input}</label>`;
@@ -601,7 +707,7 @@ $('autostart').onchange = () => window.api.setAutostart($('autostart').checked);
 
 (async function init() {
   $('trigType').innerHTML = Object.entries(TRIGGERS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
-  $('stepType').innerHTML = Object.entries(ACTIONS).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
+  buildTypePicker();
   $('trigType').addEventListener('change', updateTriggerUI);
   flows = await window.api.getFlows();
   $('autostart').checked = await window.api.getAutostart();

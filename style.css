@@ -528,3 +528,127 @@ dialog select,
 .flex1 {
   flex: 1;
 }
+
+/* ---- Seletor de tipo de ação (agrupado, com ícones e dica "?") ---- */
+.type-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+  text-align: left;
+}
+.type-btn .type-name {
+  flex: 1;
+  font-weight: 600;
+}
+.type-caret {
+  color: #8089a0;
+  font-size: 12px;
+}
+.type-panel {
+  margin-top: 6px;
+  max-height: 300px;
+  overflow: auto;
+  background: #11141c;
+  border: 1px solid #262b38;
+  border-radius: 10px;
+  padding: 6px;
+}
+.type-group {
+  margin: 12px 6px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8089a0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.type-group:first-child {
+  margin-top: 4px;
+}
+.type-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 8px;
+  text-align: left;
+}
+.type-item.sel {
+  background: #2a3350;
+}
+.type-item .type-name {
+  flex: 1;
+  font-weight: 600;
+}
+.type-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1f2430;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex: none;
+}
+.tip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #3a4258;
+  color: #8089a0;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex: none;
+  cursor: help;
+}
+.tip:hover {
+  color: #fff;
+  background: #4c6fff;
+  border-color: #4c6fff;
+}
+.tip-box {
+  position: fixed;
+  width: 260px;
+  z-index: 1000;
+  background: #0b0d12;
+  border: 1px solid #2f3648;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #e6e8ee;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* ---- Barras de rolagem personalizadas (tema escuro do AutoFlow) ---- */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2f3648;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #4c6fff;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:active {
+  background: #6280ff;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

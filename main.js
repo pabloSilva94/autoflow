@@ -305,12 +305,18 @@ async function runStep(step, ctx) {
   const p = {};
   for (const [k, v] of Object.entries(step.params)) p[k] = render(v, ctx);
   const repeatCount = Math.max(1, parseInt(p.repeat) || 1);
+  const waitMs = Math.max(0, (parseFloat(String(p.after || "0").replace(",", ".")) || 0) * 1000);
   let lastResult = ctx.last;
 
   for (let i = 0; i < repeatCount; i++) {
     if (i > 0) await sleep(100);
     lastResult = await executeSingleStep(step.type, p, ctx);
     ctx.last = lastResult;
+  }
+
+  if (waitMs > 0) {
+    log(`   ⏱ aguardando ${waitMs / 1000}s...`);
+    await sleep(waitMs);
   }
   return lastResult;
 }
